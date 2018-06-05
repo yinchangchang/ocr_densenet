@@ -6,3 +6,4 @@ scikit-learn
 torchvision
 fuzzywuzzy
 matplotlib
+scipy
