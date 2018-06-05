@@ -1,0 +1,8 @@
+Pillow
+numpy
+tqdm
+scikit-image
+scikit-learn
+torchvision
+fuzzywuzzy
+matplotlib

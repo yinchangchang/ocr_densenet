@@ -1,5 +1,5 @@
 # OCR
-[第一届西安交通大学人工智能实践大赛（2018AI实践大赛--图片文字识别）](http://competition.heils.cn/main.html)冠军
+[第一届西安交通大学人工智能实践大赛（2018AI实践大赛--图片文字识别）](http://competition.heils.cn/main.html)
 
 
 # 模型结果
