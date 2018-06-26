@@ -46,6 +46,7 @@ from skimage import measure
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
+import traceback
 
 args = parse.args
 # anchor大小
@@ -64,7 +65,7 @@ class DenseNet121(nn.Module):
     def __init__(self, out_size):
         super(DenseNet121, self).__init__()
         self.inplanes = 1024
-        self.densenet121 = densenet.densenet121(pretrained=False, small=args.small)
+        self.densenet121 = densenet.densenet121(pretrained=True, small=args.small)
         num_ftrs = self.densenet121.classifier.in_features
         self.classifier_font = nn.Sequential(
                 # 这里可以用fc做分类
@@ -465,11 +466,14 @@ def test(epoch, model, train_loader, phase='test'):
 def get_weight(labels):
     labels = labels.data.cpu().numpy()
     weights = np.zeros_like(labels)
+    # weight_false = 1.0 / ((labels<0.5).sum() + 10e-20)
+    # weight_true  = 1.0 / ((labels>0.5).sum() + 10e-20)
     weight_false = 1.0 / ((labels<0.5).sum(0) + 10e-20)
     label_true = (labels>0.5).sum(0)
     for i in range(labels.shape[1]):
         label_i = labels[:,i]
         weight_i = np.ones(labels.shape[0]) * weight_false[i]
+        # weight_i = np.ones(labels.shape[0]) * weight_false
         if label_true[i] > 0:
             weight_i[label_i>0.5] = 1.0 / label_true[i]
         weights[:,i] = weight_i
@@ -501,11 +505,23 @@ def train_eval(epoch, model, train_loader, loss, optimizer, best_f1score=0, phas
                 optimizer.step()
                 loss_list.append([x.data.cpu().numpy()[0] for x in loss_output])
             except:
-                pass
+                # pass
+                traceback.print_exc()
 
 
         # 计算 f1score, recall, precision
-        preds = probs.data.cpu().numpy() > 0.5
+        '''
+        x = probs.data.cpu().numpy() 
+        l = labels.data.cpu().numpy()
+        print (get_weight(labels) * l).sum()
+        l = 1 - l
+        print (get_weight(labels) * l).sum()
+        print x.max()
+        print x.min()
+        print x.mean()
+        print
+        # '''
+        preds = probs.data.cpu().numpy() > 0
         labels = labels.data.cpu().numpy()
         for pred, label in zip(preds, labels):
             pred[label<0] = -1
@@ -563,7 +579,7 @@ def train_eval(epoch, model, train_loader, loss, optimizer, best_f1score=0, phas
         print 'loss: {:3.4f}    pos loss: {:3.4f}   neg loss: {:3.4f}'.format(loss_mean[0], loss_mean[1], loss_mean[2])
 
     # 保存模型
-    if 'eval' in phase and best_f1score < 2: 
+    if ('eval' in phase or 'pretrain' in phase)and best_f1score < 2: 
         if args.small:
             save_dir = os.path.join(args.save_dir, 'models-small')
         else:
@@ -584,7 +600,7 @@ def train_eval(epoch, model, train_loader, loss, optimizer, best_f1score=0, phas
         else:
             best_f1score = max(best_f1score, f1score)
             if best_f1score < 1:
-                print '\n\tbest f1score {:3.4f}\n'.format(best_f1score)
+                print '\n\t{:s}\tbest f1score {:3.4f}\n'.format(phase, best_f1score)
         return best_f1score
 
 
@@ -797,27 +813,45 @@ def main():
                 pin_memory=True)
     
         best_f1score = 0
+        # eval_mode = 'pretrain-2'
+        eval_mode = 'eval'
         for epoch in range(start_epoch, args.epochs):
 
             args.epoch = epoch
 
-            if best_f1score > 0.9:
-                args.hard_mining = 1
-            if best_f1score > 0.5:
-                args.lr = 0.0001
+            if eval_mode == 'eval':
+                if best_f1score > 0.9:
+                    args.hard_mining = 1
+                    args.lr = 0.0001
 
             for param_group in optimizer.param_groups:
                 param_group['lr'] = args.lr
 
-            '''
-            if best_f1score < 0.5:
-                train_eval(epoch, model, pretrain_loader1, loss, optimizer, 2., 'pretrain-1')
-                train_eval(epoch, model, pretrain_loader2, loss, optimizer, 2., 'pretrain-2')
-            '''
             train_eval(epoch, model, train_loader1, loss, optimizer, 2., 'train-1')
             train_eval(epoch, model, train_loader2, loss, optimizer, 2., 'train-2')
             best_f1score = train_eval(epoch, model, val_loader, loss, optimizer, best_f1score, 'eval-{:d}-{:d}'.format(args.batch_size, args.hard_mining))
+            continue
+            '''
 
+            if eval_mode == 'pretrain-2':
+                args.epoch = 1
+                best_f1score = train_eval(epoch, model, pretrain_loader2, loss, optimizer, best_f1score, 'pretrain-2')
+                if best_f1score > 0.8:
+                    eval_mode = 'pretrain-1'
+                    best_f1score = 0
+            elif eval_mode == 'pretrain-1':
+                args.epoch = max(100, epoch)
+                train_eval(epoch, model, pretrain_loader2, loss, optimizer, 2.0 , 'pretrain-2')
+                best_f1score = train_eval(epoch, model, pretrain_loader1, loss, optimizer, best_f1score, 'pretrain-1')
+                if best_f1score > 0.5:
+                    eval_mode = 'eval'
+                    best_f1score = 0
+            else:
+                train_eval(epoch, model, train_loader1, loss, optimizer, 2., 'train-1')
+                train_eval(epoch, model, train_loader2, loss, optimizer, 2., 'train-2')
+                best_f1score = train_eval(epoch, model, val_loader, loss, optimizer, best_f1score, 'eval-{:d}-{:d}'.format(args.batch_size, args.hard_mining))
+
+            '''
 
 
     

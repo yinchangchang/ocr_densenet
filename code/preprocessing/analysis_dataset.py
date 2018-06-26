@@ -16,6 +16,9 @@ import json
 from PIL import Image
 import numpy as np
 from tqdm import tqdm
+import sys
+sys.path.append('../ocr')
+from tools import plot
 
 def stati_image_size(image_dir, save_dir, big_w_dir):
     if not os.path.exists(big_w_dir):
@@ -40,12 +43,29 @@ def stati_image_size(image_dir, save_dir, big_w_dir):
 
     with open(os.path.join(save_dir, 'image_hw_ratio_dict.json'), 'w') as f:
         f.write(json.dumps(image_hw_ratio_dict, indent=4))
+
+    x = range(max(h_count_dict.keys())+1)
+    y = [0 for _ in x]
     for h in sorted(h_count_dict.keys()):
         print '图片长度:{:d}~{:d}，有{:d}张图'.format(10*h, 10*h+10, h_count_dict[h])
+        y[h] = h_count_dict[h]
+    plot.plot_multi_line([x], [y], ['Length'], save_path='../../data/length.png', show=True)
+
+    x = range(max(w_count_dict.keys())+1)
+    y = [0 for _ in x]
     for w in sorted(w_count_dict.keys()):
         print '图片宽度:{:d}~{:d}，有{:d}张图'.format(10*w, 10*w+10, w_count_dict[w])
+        y[w] = w_count_dict[w]
+    plot.plot_multi_line([x], [y], ['Width'], save_path='../../data/width.png', show=True)
+
+    x = range(max(r_count_dict.keys())+1)
+    y = [0 for _ in x]
     for r in sorted(r_count_dict.keys()):
         print '图片比例:{:d}~{:d}，有{:d}张图'.format(8*r, 8*r+8, r_count_dict[r])
+        y[r] = r_count_dict[r]
+    x = [8*(_+1) for _ in x]
+    plot.plot_multi_line([x], [y], ['L/W'], save_path='../../data/ratio.png', show=True)
+
     print '\n最多的长\n', sorted(h_count_dict.keys(), key=lambda h:h_count_dict[h])[-1] * 10
     print '\n最多的宽\n', sorted(w_count_dict.keys(), key=lambda w:w_count_dict[w])[-1] * 10
 
@@ -67,9 +87,13 @@ def stati_label_length(label_json, long_text_dir):
             # os.system(cmd)
 
     word_num = 0.
+    x = range(max(l_count_dict.keys())+1)
+    y = [0 for _ in x]
     for l in sorted(l_count_dict.keys()):
         word_num += l * l_count_dict[l]
         print '文字长度:{:d}，有{:d}张图'.format(l, l_count_dict[l])
+        y[l] = l_count_dict[l]
+    plot.plot_multi_line([x], [y], ['Word Number'], save_path='../../data/word_num.png', show=True)
     print '平均每张图片{:3.4f}个字'.format(word_num / sum(l_count_dict.values()))
 
 def stati_image_gray(image_dir):
@@ -97,10 +121,11 @@ def main():
     save_dir = '../../files/'
     big_w_dir = '../../data/big_w_dir'
     stati_image_size(image_dir, save_dir, big_w_dir)
+
     train_label_json = '../../files/train_alphabet.json'
     long_text_dir = '../../data/long_text_dir'
     stati_label_length(train_label_json, long_text_dir)
-    stati_image_gray(image_dir)
+    # stati_image_gray(image_dir)
 
 if __name__ == '__main__':
     main()

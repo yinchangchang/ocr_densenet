@@ -1,5 +1,5 @@
 # OCR
-[第一届西安交通大学人工智能实践大赛（2018AI实践大赛--图片文字识别）](http://competition.heils.cn/main.html)
+[第一届西安交通大学人工智能实践大赛（2018AI实践大赛--图片文字识别）](http://competition.heils.cn/main.html)冠军
 
 
 # 模型结果
@@ -59,8 +59,10 @@ hard-mining
 		|	|--test
 		|
 		|--result
-			|
-			|--test_result.csv
+		|	|
+		|	|--test_result.csv
+		|
+		|--images		此文件夹放置任何图片均可，我放的celebA数据集用作pretrain
 
 # 运行环境
 Ubuntu16.04, python2.7, CUDA9.0
