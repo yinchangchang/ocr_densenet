@@ -40,7 +40,7 @@ parser.add_argument(
         '-b',
         metavar='BATCH SIZE',
         type=int,
-        default=32,
+        default=16,
         help='batch size'
         )
 parser.add_argument('--save-dir',

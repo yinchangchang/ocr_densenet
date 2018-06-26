@@ -820,9 +820,10 @@ def main():
             args.epoch = epoch
 
             if eval_mode == 'eval':
-                if best_f1score > 0.9:
-                    args.hard_mining = 1
+                if best_f1score > 0.8:
                     args.lr = 0.0001
+                if best_f1score > 0.7:
+                    args.hard_mining = 1
 
             for param_group in optimizer.param_groups:
                 param_group['lr'] = args.lr
