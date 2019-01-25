@@ -67,7 +67,7 @@ hard-mining
 # 运行环境
 Ubuntu16.04, python2.7, CUDA9.0
 
-安装[pytorch](https://pytorch.org/)
+安装[pytorch](https://pytorch.org/), 推荐版本: 0.2.0_3
 ```
 pip install -r requirement.txt
 ```
