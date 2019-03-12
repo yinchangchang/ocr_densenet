@@ -820,16 +820,17 @@ def main():
             args.epoch = epoch
 
             if eval_mode == 'eval':
-                if best_f1score > 0.8:
+                if best_f1score > 0.9:
                     args.lr = 0.0001
-                if best_f1score > 0.7:
+                if best_f1score > 0.9:
                     args.hard_mining = 1
 
             for param_group in optimizer.param_groups:
                 param_group['lr'] = args.lr
 
             train_eval(epoch, model, train_loader1, loss, optimizer, 2., 'train-1')
-            train_eval(epoch, model, train_loader2, loss, optimizer, 2., 'train-2')
+            if best_f1score > 0.9:
+                train_eval(epoch, model, train_loader2, loss, optimizer, 2., 'train-2')
             best_f1score = train_eval(epoch, model, val_loader, loss, optimizer, best_f1score, 'eval-{:d}-{:d}'.format(args.batch_size, args.hard_mining))
             continue
             '''
